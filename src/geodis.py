@@ -35,7 +35,6 @@ from provider.geonames import GeonamesImporter
 from provider.ip2location import IP2LocationImporter
 from provider.zipcodes import ZIPImporter
 from iprange import IPRange
-from city import City
 from zipcode import ZIPCode
 
 __author__="dvirsky"
@@ -45,19 +44,16 @@ redis_host = 'localhost'
 redis_port = 6379
 redis_db = 8
 
+
 def importGeonames(fileName):
-    
     global redis_host, redis_port, redis_db
     importer = GeonamesImporter(fileName, redis_host, redis_port, redis_db)
     if not importer.runImport():
         print "Could not import geonames database..."
         sys.exit(1)
 
-    
-
 
 def importIP2Location(fileName):
-
     print redis_host, redis_port, redis_db
     importer = IP2LocationImporter(fileName, redis_host, redis_port, redis_db)
     if not importer.runImport(True):
@@ -77,7 +73,6 @@ def importZIPCode(fileName):
 def resolveIP(ip):
     global redis_host, redis_port, redis_db
     r = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
-
     loc = IPRange.getZIP(ip, r)
     print loc
     
@@ -90,51 +85,106 @@ def resolveCoords(lat, lon):
 
 
 if __name__ == "__main__":
-    
     logging.basicConfig(
-                level = logging.INFO,
-                format='%(asctime)s %(levelname)s in %(module)s.%(funcName)s (%(filename)s:%(lineno)s): %(message)s',
-                )
+        level = logging.INFO,
+        format='%(asctime)s %(levelname)s in %(module)s.%(funcName)s (%(filename)s:%(lineno)s): %(message)s',
+    )
     #build options parser
     parser = OptionParser(usage="\n\n%prog [--import_geonames | --import_ip2location] --file=FILE", version="%prog 0.1")
 
-    parser.add_option("-g", "--import_geonames", dest="import_geonames",
-                      action='store_true', default=False,
-                      help='Import locations from Geonames data dump')
+    parser.add_option(
+        "-g",
+        "--import_geonames",
+        dest="import_geonames",
+        action='store_true',
+        default=False,
+        help='Import locations from Geonames data dump'
+    )
 
-    parser.add_option("-i", "--import_ip2coutnry", dest="import_ip2location",
-                      action='store_true', default=False,
-                      help='Import ip ranges from ip2country.com dumps')
-    parser.add_option("-z", "--import_zipcodes", dest="import_zipcodes",
-                      action='store_true', default=False,
-                      help='Import zipcodes')
+    parser.add_option(
+        "-i",
+        "--import_ip2country",
+        dest="import_ip2location",
+        action='store_true',
+        default=False,
+        help='Import ip ranges from ip2country.com csv or bin dumps'
+    )
 
-    parser.add_option("-f", "--file", dest="import_file",
-                  help="Location of the file we want to import", metavar="FILE")
+    parser.add_option(
+        "-z",
+        "--import_zipcodes",
+        dest="import_zipcodes",
+        action='store_true',
+        default=False,
+        help='Import zipcodes'
+    )
 
-    parser.add_option("-P", "--resolve_ip", dest="resolve_ip", default = None,
-                      help="resolve an ip address to location", metavar="IP_ADDR")
+    parser.add_option(
+        "-f",
+        "--file",
+        dest="import_file",
+        help="Location of the file we want to import",
+        metavar="FILE"
+    )
 
+    parser.add_option(
+        "-P",
+        "--resolve_ip",
+        dest="resolve_ip",
+        default=None,
+        help="resolve an ip address to location",
+        metavar="IP_ADDR"
+    )
 
-    parser.add_option("-L", "--resolve_latlon", dest="resolve_latlon", default = None,
-                      help="resolve an lat,lon pair into location", metavar="LAT,LON")
+    parser.add_option(
+        "-L",
+        "--resolve_latlon",
+        dest="resolve_latlon",
+        default=None,
+        help="resolve an lat,lon pair into location",
+        metavar="LAT,LON"
+    )
 
+    parser.add_option(
+        "-H",
+        "--redis_host",
+        dest="redis_host",
+        default='localhost',
+        help="redis host to use",
+        metavar="HOST"
+    )
 
-    parser.add_option("-H", "--redis_host", dest="redis_host", default = 'localhost',
-                      help="redis host to use", metavar="HOST")
+    parser.add_option(
+        "-p",
+        "--redis_port",
+        dest="redis_port",
+        default=6379,
+        type="int",
+        help="redis port to use",
+        metavar="PORT"
+    )
 
-    parser.add_option("-p", "--redis_port", dest="redis_port", default = 6379,
-                      type="int", help="redis port to use", metavar="PORT")
-
-    parser.add_option("-n", "--redis_database", dest="redis_db", default = 8,
-                      type="int", help="redis database to use (default 8)", metavar="DB_NUM")
+    parser.add_option(
+        "-n",
+        "--redis_database",
+        dest="redis_db",
+        default=8,
+        type="int",
+        help="redis database to use (default 8)",
+        metavar="DB_NUM"
+    )
     
-
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
     redis_host = options.redis_host
     redis_port = options.redis_port
     redis_db = options.redis_db
-    
+
+
+    options.import_ip2location = True
+    options.import_file = '../data/IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-SAMPLE.BIN'
+
+
+
     if options.import_geonames:
         importGeonames(options.import_file)
         

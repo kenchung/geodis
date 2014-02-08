@@ -34,20 +34,69 @@ import redis
 from importer import Importer
 from iprange import IPRange
 
+
 class IP2LocationImporter(Importer):
-
-    def runImport(self, reset = False):
-        """
-        File Format:
-        "67134976","67135231","US","UNITED STATES","CALIFORNIA","LOS ANGELES","34.045200","-118.284000","90001"
-
-        """
+    def runImport(self, reset=False):
         if reset:
             print "Deleting old ip data..."
             self.redis.delete(IPRange._indexKey)
 
         print "Starting import..."
-            
+
+        if self.fileName.lower().endswith(".bin"):
+            return self.bin_import()
+        else:
+            return self.csv_import()
+
+    def bin_import(self):
+        from ip2location_bin import IP2Location
+        records = IP2Location(self.fileName)
+
+        pipe = self.redis.pipeline()
+        i = 0
+
+        prev_record = None
+
+        for cur_record in records:
+            if prev_record is None:
+                prev_record = cur_record
+                continue
+
+            try:
+                #parse the row
+                countryCode = prev_record.country_short
+                rangeMin = IPRange.ip2long(prev_record.ip)
+                rangeMax = IPRange.ip2long(cur_record.ip)
+                lat = prev_record.latitude
+                lon = prev_record.longitude
+                zipcode = prev_record.zipcode
+
+                #junk record
+                if countryCode == '-' and (not lat and not lon):
+                    continue
+
+                range = IPRange(rangeMin, rangeMax, lat, lon, zipcode)
+                range.save(pipe)
+            except Exception, e:
+                logging.error("Could not save record: %s" % e)
+            finally:
+                prev_record = cur_record
+
+            i += 1
+            if i % 10000 == 0:
+                logging.info("Dumping pipe. did %d ranges" % i)
+                pipe.execute()
+
+        pipe.execute()
+        logging.info("Imported %d locations" % i)
+        return i
+
+    def csv_import(self):
+        """
+        File Format:
+        "67134976","67135231","US","UNITED STATES","CALIFORNIA","LOS ANGELES","34.045200","-118.284000","90001"
+
+        """
         try:
             fp = open(self.fileName)
         except Exception, e:
@@ -59,7 +108,7 @@ class IP2LocationImporter(Importer):
 
         i = 0
         for row in reader:
-            
+
             try:
                 #parse the row
                 countryCode = row[3]
@@ -78,10 +127,10 @@ class IP2LocationImporter(Importer):
                 #junk record
                 if countryCode == '-' and (not lat and not lon):
                     continue
-                    
+
                 range = IPRange(rangeMin, rangeMax, lat, lon, zipcode)
                 range.save(pipe)
-                
+
             except Exception, e:
                 logging.error("Could not save record: %s" % e)
 
@@ -92,7 +141,4 @@ class IP2LocationImporter(Importer):
 
         pipe.execute()
         logging.info("Imported %d locations" % i)
-
         return i
-
-            

@@ -25,7 +25,7 @@
 #or implied, of Do@.
 
 from countries import countries
-from geohasher import hasher
+import geohash as hasher
 import math
 
 

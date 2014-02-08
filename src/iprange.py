@@ -28,7 +28,7 @@
 import socket, struct, re
 from city import City
 from zipcode import ZIPCode
-from geohasher import hasher
+import geohash as hasher
 import struct
 
 class IPRange(object):
