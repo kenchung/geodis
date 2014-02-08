@@ -43,26 +43,18 @@ class Location(object):
         self.lon = kwargs.get('lon', None)
         self.name = kwargs.get('name', '').strip()
         
-
     def getId(self):
-
         return '%s:%s' % (self.__class__.__name__, ':'.join((str(getattr(self, x)) for x in self.__keyspec__ or self.__spec__)))
 
     @classmethod
     def getGeohashIndexKey(cls):
-
         return '%s:geohash' % cls.__name__
 
     def save(self, redisConn):
-
-        
         #save all properties
         redisConn.hmset(self.getId(), dict(((k, getattr(self, k)) for k in \
                                         self.__spec__)))
-
         self._indexGeohash(redisConn)
-
-        
 
     def _indexGeohash(self, redisConn):
         """
@@ -70,7 +62,6 @@ class Location(object):
         """
 
         redisConn.zadd(self.getGeohashIndexKey(), self.getId(), hasher.encode(self.lat, self.lon))
-
 
     def __str__(self):
         return "%s: %s" % (self.__class__.__name__, self.__dict__)
@@ -102,9 +93,7 @@ class Location(object):
         """
         Estimate the distance between 2 geohashes in uint64 format
         """
-
 #        return abs(geoHash1 - geoHash2)
-        
         try:
             coords1 = hasher.decode(geoHash1)
             coords2 = hasher.decode(geoHash2)
@@ -114,15 +103,11 @@ class Location(object):
             print e
             return None
 
-
-
     @classmethod
     def getByGeohash(cls, geoKey, redisConn):
         """
         Get a location (used directly on a subclass only!) according to a geohash key
         """
-
-
         key = cls.getGeohashIndexKey()
         tx = redisConn.pipeline()
         tx.zrangebyscore(key, geoKey, 'inf', 0, 4, True)
@@ -148,19 +133,8 @@ class Location(object):
             if not closestDist or dist < closestDist:
                 closestDist = dist
                 selected = i
-            
-            
+
         if selected is None:
             return None
 
-        
         return cls.load(str(candidates[selected][0]), redisConn)
-
-
-        
-
-        
-
-        
-        
-        

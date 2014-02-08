@@ -72,21 +72,19 @@ def importZIPCode(fileName):
     
 def resolveIP(ip):
     global redis_host, redis_port, redis_db
-    r = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
-    loc = IPRange.getZIP(ip, r)
+    loc = IPRange.get(ip, r)
     print loc
     
 
 def resolveCoords(lat, lon):
     global redis_host, redis_port, redis_db
-    r = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
     loc = ZIPCode.getByLatLon(lat, lon, r)
     print loc
 
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level = logging.INFO,
+        level=logging.INFO,
         format='%(asctime)s %(levelname)s in %(module)s.%(funcName)s (%(filename)s:%(lineno)s): %(message)s',
     )
     #build options parser
@@ -179,11 +177,11 @@ if __name__ == "__main__":
     redis_port = options.redis_port
     redis_db = options.redis_db
 
+    # options.import_ip2location = True
+    # options.import_file = '../data/IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-SAMPLE.BIN'
+    # options.resolve_ip = "62.219.0.221"
 
-    options.import_ip2location = True
-    options.import_file = '../data/IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-SAMPLE.BIN'
-
-
+    r = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
 
     if options.import_geonames:
         importGeonames(options.import_file)

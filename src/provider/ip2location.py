@@ -64,18 +64,18 @@ class IP2LocationImporter(Importer):
 
             try:
                 #parse the row
-                countryCode = prev_record.country_short
-                rangeMin = IPRange.ip2long(prev_record.ip)
-                rangeMax = IPRange.ip2long(cur_record.ip)
+                country = prev_record.country_short
+                range_min = IPRange.ip2long(prev_record.ip)
+                range_max = IPRange.ip2long(cur_record.ip)
                 lat = prev_record.latitude
                 lon = prev_record.longitude
                 zipcode = prev_record.zipcode
 
                 #junk record
-                if countryCode == '-' and (not lat and not lon):
+                if country == '-' and (not lat and not lon):
                     continue
 
-                range = IPRange(rangeMin, rangeMax, lat, lon, zipcode)
+                range = IPRange(range_min, range_max, lat, lon, zipcode=zipcode, country=country)
                 range.save(pipe)
             except Exception, e:
                 logging.error("Could not save record: %s" % e)
